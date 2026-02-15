@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다운로드 - DICOM Converter</title>
+    <link rel="stylesheet" href="download.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300..700&family=Roboto:wght@400..700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="download-container">
+        <div class="icon-area">
+            <img src="janjf93-hook-1727484_1280.png" alt="성공" class="success-img" id="status-icon">
+        </div>
+        
+        <div class="file-name-box">
+            <span id="result-file-name">파일 정보 불러오는 중...</span>
+        </div>
+
+        <div class="gallery-area" id="gallery-area">
+            
+            <div class="gallery-header">
+                <span class="info-text">미리보기 (가로 스크롤)</span>
+                
+                <div class="control-group">
+                    <button id="main-select-toggle-btn" class="ctrl-btn">선택하기</button>
+                    <button id="main-deselect-btn" class="ctrl-btn hidden">취소</button>
+                    <button id="view-all-btn" class="view-all-btn">전체보기 📁</button>
+                </div>
+            </div>
+            
+            <div id="gallery-container" class="gallery-scroll-container">
+                <div class="loading-msg">이미지 로딩 중...</div>
+            </div>
+        </div>
+
+        <a href="#" class="download-btn-large" id="main-download-btn">
+            ⬇ 변환된 파일 다운로드 (ZIP)
+        </a>
+
+        <div style="margin-top: 20px;">
+            <a href="upload.html" class="retry-link-gray">처음으로 돌아가기</a>
+        </div>
+    </div>
+
+    <div id="image-modal" class="modal-overlay image-modal-layer">
+        <span class="close-modal" id="close-image-modal">&times;</span>
+        <img class="modal-content" id="modal-img">
+        <div id="modal-caption"></div>
+    </div>
+
+    <div id="explorer-modal" class="modal-overlay explorer-modal-layer">
+        <div class="modal-explorer-window">
+            <div class="explorer-header">
+                <h3>📂 전체 파일 탐색기</h3>
+                
+                <div class="explorer-controls">
+                    <button id="exp-select-toggle-btn" class="ctrl-btn">선택하기</button>
+                    <button id="exp-deselect-btn" class="ctrl-btn hidden">전체 취소</button>
+                    <span class="close-modal-btn" id="close-explorer-modal">&times;</span>
+                </div>
+            </div>
+
+            <div id="explorer-grid-container" class="explorer-grid">
+                </div>
+
+            <div class="explorer-footer">
+                <button class="download-btn-large" id="exp-download-btn">
+                    ⬇ 파일 다운로드
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="module" src="download.js"></script>
+
+</body>
+</html>

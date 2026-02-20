@@ -4,7 +4,13 @@ async function fetchHistory() {
     const listElement = document.getElementById('history-list');
 
     try {
-        const response = await fetch(API_endpoints.HISTORY);
+        // ★ [수정] Ngrok 헤더 추가
+        const response = await fetch(API_endpoints.HISTORY, {
+            headers: {
+                'ngrok-skip-browser-warning': '69420'
+            }
+        });
+
         if (!response.ok) throw new Error('조회 실패');
         
         const data = await response.json();
@@ -17,7 +23,9 @@ async function fetchHistory() {
 
         data.forEach(item => {
             const tr = document.createElement('tr');
-            const statusClass = item.conversionStatus === "SUCCESS" ? "status-success" : "status-fail";
+            // 상태값 안전 처리
+            const status = item.conversionStatus || item.status || 'UNKNOWN';
+            const statusClass = (status === "SUCCESS" || status === "SUCESS") ? "status-success" : "status-fail";
             const patientName = item.patientName || '-';
             const truncatedName = patientName.length > 15 ? patientName.substring(0, 15) + '...' : patientName;
 
@@ -25,7 +33,7 @@ async function fetchHistory() {
                 <td>#${item.id}</td>
                 <td title="${patientName}">${truncatedName}</td>
                 <td>${item.modality || '-'}</td>
-                <td><span class="status-badge ${statusClass}">${item.conversionStatus}</span></td>
+                <td><span class="status-badge ${statusClass}">${status}</span></td>
                 <td><a href="download.html?id=${item.id}" class="view-link">보기</a></td>
             `;
             listElement.appendChild(tr);

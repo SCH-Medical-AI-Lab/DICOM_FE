@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DICOM 변환 내역 조회</title>
+    <link rel="stylesheet" href="history2.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="content-container">
+            <header class="page-header">
+                <div class="header-card">
+                    <div>
+                        <h1 class="main-title">DICOM 변환 내역 조회</h1>
+                        <p class="sub-title">DCM/ZIP 파일을 PNG로 변환한 내역을 확인하세요</p>
+                    </div>
+                    <a href="upload.html" class="btn btn-dark">
+                        <span>새 파일 업로드 (홈)</span>
+                    </a>
+                </div>
+            </header>
+
+            <div class="controls-row">
+                <button id="loadButton" class="btn btn-primary">📋 전체 목록 불러오기</button>
+            </div>
+
+            <div id="loadingState" class="card hidden">
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <span>데이터를 불러오는 중...</span>
+                </div>
+            </div>
+
+            <div id="listSection" class="card hidden">
+                <div class="card-header"><h2 class="card-title">변환 내역 리스트</h2></div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>환자명 / 파일명</th>
+                                <th>상태</th>
+                                <th>업로드 일시</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">상세 조회</h2>
+                    <div class="search-row">
+                        <input id="searchIdInput" type="number" placeholder="ID 입력" class="search-input">
+                        <button id="searchButton" class="btn btn-success">🔍 조회</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="detailSection" class="card hidden">
+                <div class="card-header">
+                    <h2 class="card-title">상세 정보</h2>
+                    <button id="closeDetailBtn" class="btn-close">✕ 닫기</button>
+                </div>
+                <div class="card-body">
+                    <div class="details-grid">
+                        <div class="detail-column">
+                            <div class="detail-item"><span class="detail-label">ID</span><p id="detailId" class="detail-value bold"></p></div>
+                            <div class="detail-item"><span class="detail-label">환자명</span><p id="detailName" class="detail-value"></p></div>
+                            <div class="detail-item"><span class="detail-label">상태</span><p id="detailStatus" class="detail-value"></p></div>
+                        </div>
+                        <div class="detail-column">
+                            <div class="detail-item"><span class="detail-label">촬영일자</span><p id="detailStudyDate" class="detail-value"></p></div>
+                            <div class="detail-item"><span class="detail-label">장비</span><p id="detailModality" class="detail-value"></p></div>
+                            <div class="detail-item"><span class="detail-label">이미지</span><a id="detailPngUrl" href="#" target="_blank" class="detail-link"></a></div>
+                        </div>
+                    </div>
+                    <div id="imagePreviewSection" class="preview-section hidden">
+                        <div class="preview-box"><img id="previewImage" src="" alt="PNG"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="history2.js"></script>
+</body>
+</html>

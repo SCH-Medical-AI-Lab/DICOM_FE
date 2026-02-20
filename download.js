@@ -1,13 +1,32 @@
 /**
- * download.js - [FINAL HYBRID VERSION]
- * - ZIP 파일(다중 이미지)과 단일 이미지(PNG)를 자동으로 구별하여 처리합니다.
- * - 기능: 자동 타입 감지 -> (ZIP이면 해제 / 이미지면 바로 사용) -> 갤러리 렌더링
+ * download.js
+ * 기능: 서버에서 변환된 결과물을 조회하고 갤러리 형태로 보여줌
+ * 추가 기능: 서버 연결 실패 시 테스트 모드, 파일 상세 정보 테이블 출력
  */
 
 import { API_endpoints } from './config.js';
 
+const SERVER_BASE_URL = "https://moist-facete-penney.ngrok-free.dev";
+
+const API_CONFIG = {
+    HISTORY_DETAIL: (id) => `${SERVER_BASE_URL}/api/dicom/history/${id}`,
+    DOWNLOAD: (id) => `${SERVER_BASE_URL}/api/dicom/download/${id}`
+};
+
+// ★ [테스트용] 서버가 꺼졌을 때 사용할 더미 이미지 데이터
+const MOCK_IMAGES = [
+    { name: "test_image_01.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+1" },
+    { name: "test_image_02.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+2" },
+    { name: "test_image_03.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+3" },
+    { name: "test_image_04.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+4" },
+    { name: "test_image_05.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+5" },
+    { name: "test_image_06.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+6" },
+    { name: "test_image_07.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+7" },
+    { name: "test_image_08.png", url: "https://via.placeholder.com/400x400.png?text=DICOM+8" }
+];
+
 window.addEventListener('DOMContentLoaded', async () => {
-    console.log("🚀 download.js: 스마트 모드로 시작합니다.");
+    console.log("download.js: 화면 로드 완료, 로직 시작");
 
     // === DOM 요소 ===
     const fileNameElement = document.getElementById("result-file-name");
@@ -15,7 +34,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     const explorerGrid = document.getElementById("explorer-grid-container");
     const statusIcon = document.getElementById("status-icon"); 
     
-    // 버튼
     const mainDownloadBtn = document.getElementById("main-download-btn");
     const expDownloadBtn = document.getElementById("exp-download-btn");
     const viewAllBtn = document.getElementById("view-all-btn");
@@ -25,7 +43,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     const expSelectBtn = document.getElementById("exp-select-toggle-btn");
     const expDeselectBtn = document.getElementById("exp-deselect-btn");
 
-    // 모달
     const imageModal = document.getElementById("image-modal");
     const modalImg = document.getElementById("modal-img");
     const modalCaption = document.getElementById("modal-caption");
@@ -39,239 +56,204 @@ window.addEventListener('DOMContentLoaded', async () => {
     const selectedFiles = new Set();
     let imagesData = []; 
     let serverFileName = "result";
-    let isSingleImage = false; // ★ 단일 이미지 여부 체크
+    let originalFileBlob = null; 
 
-    // 1. URL 파라미터 확인
+    // URL 파라미터 확인
     const params = new URLSearchParams(window.location.search);
     const dicomId = params.get('id');
 
-    if (!dicomId) {
-        alert("잘못된 접근입니다.");
-        window.location.href = "upload.html";
-        return;
-    }
-
+    // === 메인 실행부 ===
     try {
+        if (!dicomId) throw new Error("ID 없음");
         await checkServerStatusAndLoad(dicomId);
     } catch (error) {
-        console.error("Critical Error:", error);
-        handleError("서버 연결 중 오류가 발생했습니다.");
+        console.warn("⚠️ 서버 연결 실패: 테스트 모드로 실행합니다.", error);
+        startTestMode(dicomId || 'TEST-999');
     }
 
+    // --- 테스트 모드 ---
+    function startTestMode(id) {
+        serverFileName = "TEST_RESULT.zip";
+        if (fileNameElement) fileNameElement.textContent = "테스트 모드 (서버 미연결)";
+        
+        // 더미 이미지를 화면에 세팅
+        imagesData = MOCK_IMAGES.map(img => ({
+            ...img,
+            originalBlob: new Blob(["test"], { type: "image/png" })
+        }));
+        
+        // 테스트용 상세 정보 테이블 렌더링
+        renderDetailInfo({
+            id: id,
+            patientName: "홍길동 (테스트)",
+            modality: "CT",
+            studyDate: "20260219",
+            conversionStatus: "SUCCESS"
+        });
+
+        renderAll();
+    }
 
     // =========================================================
-    // 📡 서버 통신 및 데이터 로딩 (지능형)
+    // 서버 통신 및 데이터 로딩
     // =========================================================
 
     async function checkServerStatusAndLoad(id) {
-        // 1. 상태 조회
-        const statusRes = await fetch(API_endpoints.HISTORY_DETAIL(id));
-        if (!statusRes.ok) throw new Error("상태 조회 실패");
+        const apiUrl = API_CONFIG.HISTORY_DETAIL(id);
+        
+        const statusRes = await fetch(apiUrl, {
+            headers: { 'ngrok-skip-browser-warning': '69420' }
+        });
+
+        if (!statusRes.ok) throw new Error(`상태 조회 실패 (HTTP ${statusRes.status})`);
         
         const statusData = await statusRes.json();
+        console.log("📦 [서버 원본 데이터]:", statusData); 
+
+        // ★ [핵심] 가져온 정보로 하단 상세 정보 테이블 채우기
+        renderDetailInfo(statusData);
 
         if (statusData.fileName) {
             serverFileName = statusData.fileName;
-            fileNameElement.textContent = serverFileName;
+            if (fileNameElement) fileNameElement.textContent = serverFileName;
         }
 
-        if (statusData.status === 'SUCCESS') {
-            updateLoadingMessage("파일을 분석하고 있습니다...");
+        const status = statusData.status || statusData.conversionStatus;
+
+        if (status === 'SUCCESS' || status === 'SUCESS') {
+            updateLoadingMessage("파일을 다운로드하고 분석 중입니다...");
             await processDownload(id);
-        } else if (statusData.status === 'FAIL') {
-            handleError("변환에 실패했습니다.");
+        } else if (status === 'FAIL' || status === 'FAILED') {
+            throw new Error("서버에서 변환 실패 응답을 받았습니다.");
+        } else if (status === 'PROCESSING' || status === 'PENDING') {
+            handleProcessing(); 
         } else {
-            handleProcessing();
+            throw new Error(`알 수 없는 변환 상태입니다: ${status}`);
         }
     }
 
-    // ★ 핵심: ZIP인지 이미지인지 확인해서 처리
     async function processDownload(id) {
         try {
-            // 다운로드 요청
-            const res = await fetch(API_endpoints.DOWNLOAD(id));
+            const downloadUrl = API_CONFIG.DOWNLOAD(id);
+            const res = await fetch(downloadUrl, { headers: { 'ngrok-skip-browser-warning': '69420' } });
             if (!res.ok) throw new Error("파일 다운로드 실패");
             
-            // ★ 서버가 보낸 파일 형식이 뭔지 확인! (Content-Type)
             const contentType = res.headers.get("Content-Type");
-            const blob = await res.blob();
+            originalFileBlob = await res.blob(); 
+            imagesData = []; 
 
-            imagesData = []; // 초기화
-
-            // [케이스 1] ZIP 파일인 경우 (대부분 이 경우)
             if (contentType && (contentType.includes("zip") || serverFileName.endsWith(".zip"))) {
-                isSingleImage = false;
-                await unzipAndLoad(blob);
-            } 
-            // [케이스 2] 그냥 이미지 파일인 경우 (단일 파일)
-            else if (contentType && contentType.includes("image")) {
-                isSingleImage = true;
-                const url = URL.createObjectURL(blob);
-                imagesData.push({
-                    name: serverFileName,
-                    url: url,
-                    originalBlob: blob
-                });
-                console.log("단일 이미지로 감지되었습니다.");
-            }
-            // [기타] 알 수 없는 형식이지만 일단 ZIP으로 시도
-            else {
-                console.warn("알 수 없는 형식입니다. ZIP으로 간주합니다.");
-                await unzipAndLoad(blob);
+                await unzipAndLoad(originalFileBlob); 
+            } else {
+                const url = URL.createObjectURL(originalFileBlob);
+                imagesData.push({ name: serverFileName, url: url, originalBlob: originalFileBlob });
             }
 
-            // 렌더링 시작
-            if (imagesData.length === 0) {
-                updateLoadingMessage("표시할 이미지가 없습니다.");
-            } else {
-                renderAll();
-            }
+            if (imagesData.length === 0) updateLoadingMessage("표시할 이미지가 없습니다.");
+            else renderAll(); 
 
         } catch (err) {
-            console.error("처리 중 오류:", err);
-            handleError("파일을 처리하는 데 실패했습니다.");
+            console.error("다운로드 오류:", err);
+            throw err; 
         }
     }
 
-    // ZIP 압축 해제 로직
     async function unzipAndLoad(zipBlob) {
         try {
             const zip = await JSZip.loadAsync(zipBlob);
             const promises = [];
-            
             zip.forEach((relativePath, zipEntry) => {
                 if (!zipEntry.dir && (zipEntry.name.match(/\.(png|jpe?g)$/i))) {
                     const promise = zipEntry.async('blob').then(blob => {
-                        return {
-                            name: zipEntry.name,
-                            url: URL.createObjectURL(blob),
-                            originalBlob: blob
-                        };
+                        return { name: zipEntry.name, url: URL.createObjectURL(blob), originalBlob: blob };
                     });
                     promises.push(promise);
                 }
             });
-
-            const loadedImages = await Promise.all(promises);
-            // 이름순 정렬
-            loadedImages.sort((a, b) => a.name.localeCompare(b.name));
-            imagesData = loadedImages;
-
+            imagesData = await Promise.all(promises);
+            imagesData.sort((a, b) => a.name.localeCompare(b.name));
         } catch (e) {
-            throw new Error("ZIP 압축 해제 실패");
+            throw new Error("ZIP 압축 해제 실패: " + e.message);
         }
     }
 
-
     // =========================================================
-    // 🎮 이벤트 리스너
+    // ★ 파일 상세 정보 테이블 렌더링 함수
     // =========================================================
+    function renderDetailInfo(data) {
+        const detailCard = document.getElementById('detail-info-card');
+        const tbody = document.getElementById('detail-table-body');
+        
+        if (!detailCard || !tbody) return;
 
-    mainSelectBtn.onclick = toggleSelectionMode;
-    expSelectBtn.onclick = toggleSelectionMode;
+        const id = data.id || '-';
+        const patientName = data.patientName || data.patientId || '-';
+        const modality = data.modality || '-';
+        let studyDate = data.studyDate || '-';
+        const status = data.conversionStatus || data.status || 'UNKNOWN';
 
-    mainDeselectBtn.onclick = deselectAll;
-    expDeselectBtn.onclick = deselectAll;
-
-    mainDownloadBtn.onclick = handleDownloadClick;
-    expDownloadBtn.onclick = handleDownloadClick;
-
-    viewAllBtn.onclick = () => {
-        explorerModal.style.display = "flex";
-        document.body.style.overflow = "hidden";
-    };
-    
-    closeExplorerModal.onclick = () => {
-        explorerModal.style.display = "none";
-        document.body.style.overflow = "auto";
-    };
-
-    closeImageModal.onclick = () => imageModal.style.display = "none";
-
-    window.onclick = (e) => {
-        if (e.target === imageModal) imageModal.style.display = "none";
-        if (e.target === explorerModal) {
-            explorerModal.style.display = "none";
-            document.body.style.overflow = "auto";
+        if (studyDate.length === 8) {
+            studyDate = `${studyDate.substring(0, 4)}-${studyDate.substring(4, 6)}-${studyDate.substring(6, 8)}`;
         }
-    };
 
+        let statusBadge = `<span class="badge-status" style="background:#f3f4f6; border:1px solid #d1d5db; color:#374151;">알수없음</span>`;
+        if (status === 'SUCCESS' || status === 'SUCESS') {
+            statusBadge = `<span class="badge-status badge-success">완료</span>`;
+        } else if (status === 'PROCESSING' || status === 'PENDING') {
+            statusBadge = `<span class="badge-status badge-processing">변환중</span>`;
+        } else if (status === 'FAIL' || status === 'FAILED') {
+            statusBadge = `<span class="badge-status badge-fail">실패</span>`;
+        }
+
+        tbody.innerHTML = `
+            <tr>
+                <td style="font-weight: bold;">#${id}</td>
+                <td>${patientName}</td>
+                <td><span class="badge-modality">${modality}</span></td>
+                <td>${studyDate}</td>
+                <td>${statusBadge}</td>
+            </tr>
+        `;
+
+        detailCard.style.display = 'block';
+    }
 
     // =========================================================
-    // ⚙️ UI 렌더링
+    // UI 렌더링 및 기능 연결
     // =========================================================
 
     function renderAll() {
-        renderGallery(galleryContainer, imagesData);
-        renderGallery(explorerGrid, imagesData);
-        updateButtonsUI();
+        renderGallery(galleryContainer, imagesData); 
+        renderGallery(explorerGrid, imagesData);     
+        updateButtonsUI(); 
     }
 
     function renderGallery(container, images) {
-        container.innerHTML = '';
-
+        container.innerHTML = ''; 
         images.forEach(imgData => {
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'gallery-item';
+            itemDiv.className = `gallery-item ${isSelectionMode ? 'select-mode' : ''} ${selectedFiles.has(imgData.name) ? 'selected' : ''}`;
             
-            if (isSelectionMode) itemDiv.classList.add('select-mode');
-            if (selectedFiles.has(imgData.name)) itemDiv.classList.add('selected');
-
             const checkOverlay = document.createElement('div');
-            checkOverlay.className = 'check-overlay';
-            if (selectedFiles.has(imgData.name)) checkOverlay.classList.add('checked');
+            checkOverlay.className = `check-overlay ${selectedFiles.has(imgData.name) ? 'checked' : ''}`;
             
             const img = document.createElement('img');
             img.src = imgData.url;
             img.className = 'gallery-thumb';
-            img.title = "한번 클릭: 확대 / 더블 클릭: 다운로드";
             
             const nameSpan = document.createElement('span');
             nameSpan.className = 'gallery-item-name';
             nameSpan.textContent = imgData.name;
 
-            // --- 클릭/더블클릭 구분 로직 ---
-            let clickTimer = null;
-
             const handleClick = (e) => {
                 e.stopPropagation();
-                if (isSelectionMode) {
-                    toggleFileSelection(imgData.name);
-                } else {
-                    if (clickTimer) {
-                        clearTimeout(clickTimer);
-                        clickTimer = null;
-                    } else {
-                        clickTimer = setTimeout(() => {
-                            clickTimer = null;
-                            openImagePopup(imgData.url, imgData.name);
-                        }, 250);
-                    }
-                }
-            };
-
-            const handleDblClick = (e) => {
-                e.stopPropagation();
-                if (!isSelectionMode) {
-                    if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
-                    downloadSingleFile(imgData.url, imgData.name);
-                }
+                if (isSelectionMode) toggleFileSelection(imgData.name); 
+                else openImagePopup(imgData.url, imgData.name); 
             };
 
             img.onclick = handleClick;
-            img.ondblclick = handleDblClick;
+            checkOverlay.onclick = (e) => { e.stopPropagation(); toggleFileSelection(imgData.name); };
             
-            checkOverlay.onclick = (e) => {
-                e.stopPropagation();
-                toggleFileSelection(imgData.name);
-            };
-
-            // 텍스트 클릭 시 동작 없음 (선택 모드일때만 선택)
-            nameSpan.onclick = (e) => {
-                e.stopPropagation();
-                if (isSelectionMode) toggleFileSelection(imgData.name);
-            };
-
             itemDiv.appendChild(checkOverlay);
             itemDiv.appendChild(img);
             itemDiv.appendChild(nameSpan);
@@ -279,128 +261,95 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    function toggleSelectionMode() {
-        isSelectionMode = !isSelectionMode;
-        renderAll();
-    }
-
-    function toggleFileSelection(fileName) {
-        if (selectedFiles.has(fileName)) selectedFiles.delete(fileName);
-        else selectedFiles.add(fileName);
-        renderAll();
-    }
-
-    function deselectAll() {
-        selectedFiles.clear();
-        renderAll();
-    }
+    function toggleSelectionMode() { isSelectionMode = !isSelectionMode; renderAll(); }
+    function toggleFileSelection(fileName) { selectedFiles.has(fileName) ? selectedFiles.delete(fileName) : selectedFiles.add(fileName); renderAll(); }
+    function deselectAll() { selectedFiles.clear(); renderAll(); }
 
     function updateButtonsUI() {
-        const downloadText = isSelectionMode 
-            ? `선택된 ${selectedFiles.size}개 다운로드` 
-            : `⬇ 변환된 파일 다운로드 (${isSingleImage ? 'PNG' : 'ZIP'})`; // 파일 형식에 따라 텍스트 변경
-        
+        const downloadText = isSelectionMode ? `선택된 ${selectedFiles.size}개 다운로드` : `⬇ 전체 파일 다운로드`;
         const selectText = isSelectionMode ? "선택 완료" : "선택하기";
 
         [mainDownloadBtn, expDownloadBtn].forEach(btn => {
             btn.textContent = downloadText;
-            if (isSelectionMode) btn.classList.add('selected-mode');
+            if (isSelectionMode) btn.classList.add('selected-mode'); 
             else btn.classList.remove('selected-mode');
             
-            // 일반 모드 버튼 동작
-            if (!isSelectionMode) {
-                btn.onclick = (e) => {
-                    // 서버 링크로 바로 이동 (가장 안정적)
-                    window.location.href = API_endpoints.DOWNLOAD(dicomId);
-                };
-            } else {
-                btn.onclick = handleDownloadClick; // 선택 다운로드 로직
-            }
+            btn.onclick = isSelectionMode ? handleSelectedDownload : handleFullDownload;
         });
 
         [mainSelectBtn, expSelectBtn].forEach(btn => {
             btn.textContent = selectText;
-            if (isSelectionMode) btn.classList.add('active');
-            else btn.classList.remove('active');
+            if (isSelectionMode) btn.classList.add('active'); else btn.classList.remove('active');
         });
 
         [mainDeselectBtn, expDeselectBtn].forEach(btn => {
-            if (isSelectionMode) btn.classList.remove('hidden');
-            else btn.classList.add('hidden');
+            if (isSelectionMode) btn.classList.remove('hidden'); else btn.classList.add('hidden');
         });
     }
 
-    // 선택된 파일 ZIP 압축 다운로드
-    async function handleDownloadClick(e) {
+    function handleFullDownload(e) {
         e.preventDefault();
-
-        if (isSelectionMode) {
-            if (selectedFiles.size === 0) return alert("선택된 파일이 없습니다.");
-            
-            const zip = new JSZip();
-            let count = 0;
-            
-            imagesData.forEach(img => {
-                if (selectedFiles.has(img.name)) {
-                    zip.file(img.name, img.originalBlob);
-                    count++;
-                }
-            });
-
-            if (count > 0) {
-                const content = await zip.generateAsync({type:"blob"});
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(content);
-                // 원본 파일명 기반으로 이름 생성
-                const baseName = serverFileName.replace(/\.(zip|png|dcm)$/i, "");
-                a.download = `selected_${baseName}.zip`; 
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }
+        if (!originalFileBlob) {
+            alert(serverFileName === "TEST_RESULT.zip" ? "테스트 모드: 실제 파일은 다운로드할 수 없습니다." : "다운로드할 파일이 없습니다.");
+            return;
         }
-    }
-
-    function downloadSingleFile(url, name) {
         const a = document.createElement('a');
-        a.href = url;
-        a.download = name;
+        a.href = URL.createObjectURL(originalFileBlob);
+        a.download = serverFileName; 
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
     }
 
-    function openImagePopup(url, name) {
-        modalImg.src = url;
-        modalCaption.textContent = name;
-        imageModal.style.display = "block";
+    async function handleSelectedDownload(e) {
+        e.preventDefault();
+        if (selectedFiles.size === 0) return alert("선택된 파일이 없습니다.");
+        
+        const zip = new JSZip();
+        imagesData.forEach(img => { 
+            if (selectedFiles.has(img.name)) zip.file(img.name, img.originalBlob); 
+        });
+        
+        const content = await zip.generateAsync({type:"blob"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(content);
+        const baseName = serverFileName.replace(/\.(zip|png|dcm)$/i, "");
+        a.download = `selected_${baseName}.zip`; 
+        document.body.appendChild(a); 
+        a.click(); 
+        document.body.removeChild(a);
     }
 
-    // --- 유틸리티 ---
-
-    function updateLoadingMessage(msg) {
-        const html = `<div class="loading-msg">${msg}</div>`;
-        galleryContainer.innerHTML = html;
-        explorerGrid.innerHTML = html;
-    }
-
+    function openImagePopup(url, name) { modalImg.src = url; modalCaption.textContent = name; imageModal.style.display = "block"; }
+    function updateLoadingMessage(msg) { galleryContainer.innerHTML = `<div class="loading-msg">${msg}</div>`; explorerGrid.innerHTML = galleryContainer.innerHTML; }
+    
     function handleError(msg) {
         if (statusIcon) statusIcon.src = "janjf93-false-2061132_1280.png";
         const errorHtml = `<div class="loading-msg" style="color:red; font-weight:bold;">❌ ${msg}</div>`;
         galleryContainer.innerHTML = errorHtml;
         explorerGrid.innerHTML = errorHtml;
-        fileNameElement.textContent = "오류 발생";
+        if (fileNameElement) fileNameElement.textContent = "접근 오류"; 
         mainDownloadBtn.style.display = "none";
     }
 
     function handleProcessing() {
-        if (statusIcon) statusIcon.src = "loading_spinner.gif"; // 로딩 이미지 있다면
-        updateLoadingMessage("서버에서 변환 작업 중입니다... 잠시만 기다려주세요.");
-        mainDownloadBtn.textContent = "변환 중...";
-        mainDownloadBtn.style.opacity = "0.6";
-        mainDownloadBtn.style.pointerEvents = "none";
-        
-        // 3초 후 재시도
+        if (statusIcon) statusIcon.src = "loading_spinner.gif";
+        updateLoadingMessage("변환 작업 중... 잠시만 기다려주세요.");
         setTimeout(() => checkServerStatusAndLoad(dicomId), 3000);
     }
+    
+    // 이벤트 리스너 등록
+    mainSelectBtn.onclick = toggleSelectionMode;
+    expSelectBtn.onclick = toggleSelectionMode;
+    mainDeselectBtn.onclick = deselectAll;
+    expDeselectBtn.onclick = deselectAll;
+
+    viewAllBtn.onclick = () => { explorerModal.style.display = "flex"; document.body.style.overflow = "hidden"; };
+    closeExplorerModal.onclick = () => { explorerModal.style.display = "none"; document.body.style.overflow = "auto"; };
+    closeImageModal.onclick = () => imageModal.style.display = "none";
+
+    window.onclick = (e) => {
+        if (e.target === imageModal) imageModal.style.display = "none";
+        if (e.target === explorerModal) { explorerModal.style.display = "none"; document.body.style.overflow = "auto"; }
+    };
 });

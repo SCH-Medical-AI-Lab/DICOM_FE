@@ -1,0 +1,204 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300..800&display=swap');
+
+/* --- 기본 설정 --- */
+body {
+    background-color: #f9fafb;
+    font-family: 'Noto Sans KR', sans-serif;
+    margin: 0;
+    color: #374151;
+}
+
+.page-wrapper {
+    min-height: 100vh;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.content-container {
+    max-width: 72rem; /* 1152px */
+    margin: 0 auto;
+}
+
+/* --- 헤더 및 타이틀 --- */
+.page-header { margin-bottom: 2.5rem; }
+
+.header-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    background-color: #ffffff;
+    padding: 1.5rem 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+@media (min-width: 640px) {
+    .header-card {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.main-title {
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.025em;
+}
+
+.sub-title {
+    color: #6b7280;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* --- 공통 버튼 스타일 --- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.btn-dark {
+    background-color: #111827;
+    color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.btn-dark:hover {
+    background-color: #1f2937;
+    transform: translateY(-2px);
+}
+.btn-dark svg {
+    width: 1.25rem; height: 1.25rem;
+    transition: transform 0.3s ease;
+}
+.btn-dark:hover svg {
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background-color: #2563eb; color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.btn-primary:hover { background-color: #1d4ed8; }
+
+.btn-success {
+    background-color: #16a34a; color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.btn-success:hover { background-color: #15803d; }
+
+.btn-close {
+    background: none; border: none; color: #6b7280;
+    font-size: 1rem; cursor: pointer; transition: color 0.2s;
+}
+.btn-close:hover { color: #374151; }
+
+.btn-text {
+    background: none; border: none; color: #2563eb;
+    font-weight: 700; cursor: pointer; padding: 0; font-size: 0.875rem;
+}
+.btn-text:hover { color: #1e40af; }
+
+/* --- 카드 디자인 --- */
+.controls-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+
+.card {
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+.card-header {
+    padding: 1rem 1.5rem; background-color: #f3f4f6;
+    border-bottom: 1px solid #e5e7eb; display: flex;
+    justify-content: space-between; align-items: center;
+}
+.card-title { font-size: 1.25rem; font-weight: 600; color: #1f2937; margin: 0; }
+.card-body { padding: 1.5rem; }
+.search-row { display: flex; gap: 0.75rem; }
+
+/* --- 검색 입력창 --- */
+.search-input {
+    flex: 1; padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db; border-radius: 0.5rem;
+    outline: none; transition: all 0.2s; font-size: 1rem;
+}
+.search-input:focus {
+    border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* --- 데이터 테이블 --- */
+.table-responsive { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+    padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem;
+    font-weight: 500; color: #6b7280; text-transform: uppercase;
+    background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;
+}
+.data-table td {
+    padding: 1rem 1.5rem; font-size: 0.875rem; color: #111827;
+    border-bottom: 1px solid #e5e7eb; white-space: nowrap;
+}
+.data-table tbody tr { transition: background-color 0.2s; }
+.data-table tbody tr:hover { background-color: #f9fafb; }
+
+/* --- 상태 뱃지 --- */
+.status-badge {
+    padding: 0.25rem 0.75rem; border-radius: 9999px;
+    font-size: 0.75rem; font-weight: 600; display: inline-block;
+}
+.status-success { background-color: #dcfce7; color: #166534; }
+.status-failed { background-color: #fee2e2; color: #991b1b; }
+.status-processing { background-color: #dbeafe; color: #1e40af; }
+.status-unknown { background-color: #f3f4f6; color: #1f2937; }
+
+/* --- 상세 정보 그리드 --- */
+.details-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+@media (min-width: 768px) { .details-grid { grid-template-columns: repeat(2, 1fr); } }
+.detail-item { margin-bottom: 1rem; }
+.detail-label { display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 0.25rem; }
+.detail-value { font-size: 1.125rem; color: #111827; margin: 0; }
+.detail-value.bold { font-weight: 700; font-size: 1.25rem; }
+.detail-link { color: #2563eb; text-decoration: none; word-break: break-all; }
+.detail-link:hover { text-decoration: underline; }
+
+/* --- 이미지 미리보기 --- */
+.preview-section { margin-top: 1.5rem; }
+.preview-box {
+    border: 1px solid #e5e7eb; border-radius: 0.5rem;
+    padding: 1rem; background-color: #f9fafb; text-align: center;
+}
+.preview-box img { max-width: 100%; height: auto; border-radius: 0.25rem; }
+
+/* --- 에러 박스 및 로딩 --- */
+.error-box {
+    background-color: #fef2f2; border: 1px solid #fecaca;
+    color: #b91c1c; padding: 1rem 1.5rem; border-radius: 0.5rem; margin-top: 1.5rem;
+}
+.error-title { font-weight: 600; margin: 0; }
+.error-desc { font-size: 0.875rem; margin: 0.25rem 0 0 0; }
+.hidden { display: none !important; }
+
+.loading-container { display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.spinner {
+    border: 3px solid #e5e7eb; border-top: 3px solid #2563eb;
+    border-radius: 50%; width: 2rem; height: 2rem;
+    animation: spin 1s linear infinite; margin-right: 0.75rem;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }

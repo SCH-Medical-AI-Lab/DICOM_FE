@@ -12,16 +12,16 @@ const deleteBtn = document.getElementById("delete-btn"); //삭제 버튼
 
 let file;
 
-//파일선택 창 열기
+// 파일선택 창 열기
 browseBtn.onclick = () => fileInput.click();
 
-//파일선택 시
+// 파일선택 시
 fileInput.addEventListener("change", function () {
   file = this.files[0];
   showFile();
 });
 
-//드래그 앤 드롭
+// 드래그 앤 드롭
 dropArea.addEventListener("dragover", (event) => {
   event.preventDefault();
   dropArea.classList.add("active");
@@ -70,6 +70,9 @@ convertBtn.addEventListener("click", () => {
 
   const xhr = new XMLHttpRequest();
   xhr.open("POST", API_endpoints.UPLOAD, true); // config에서 가져옴
+  
+   // ★ [수정 1] Ngrok 헤더 추가 (이게 없으면 업로드 실패)
+  xhr.setRequestHeader('ngrok-skip-browser-warning', '69420');
 
   // 로딩바 진행률 업데이트
   xhr.upload.onprogress = (event) => {
@@ -90,7 +93,11 @@ convertBtn.addEventListener("click", () => {
       
       try {
         const convertResponse = await fetch(API_endpoints.CONVERT(fileId), {
-          method: 'POST'
+          method: 'POST',
+          // ★ [수정 2] 변환 요청에도 헤더 추가
+          headers: {
+            'ngrok-skip-browser-warning': '69420'
+          }
         });
 
         if (convertResponse.ok) {
@@ -102,11 +109,13 @@ convertBtn.addEventListener("click", () => {
           loadingOverlay.classList.add("hidden");
         }
       } catch (error) {
+        console.error(error);
         alert("서버와 통신 중 오류 발생");
         loadingOverlay.classList.add("hidden");
       }
       
     } else {
+      alert("서버 연결 실패 (업로드)");
       alert("서버 연결 실패");
       loadingOverlay.classList.add("hidden");
     }

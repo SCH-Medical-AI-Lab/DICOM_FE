@@ -1,4 +1,4 @@
-import { API_endpoints } from './config.js';
+import { API_endpoints } from './config.js'; //-
 
 const dropArea = document.getElementById("drop-area"); //업로드 박스
 const fileInput = document.getElementById("file-input");

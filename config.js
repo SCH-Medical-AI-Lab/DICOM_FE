@@ -1,4 +1,4 @@
-export const BASE_URL = "https://moist-facete-penney.ngrok-free.dev";
+export const BASE_URL = "https://moist-facete-penney.ngrok-free.dev"; //주소 입력
 
 export const API_endpoints = {
     UPLOAD: `${BASE_URL}/api/dicom/upload`,

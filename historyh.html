@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!---->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DICOM 변환 내역 조회</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&family=Roboto:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="history.css">
+</head>
+<body>
+    <div class="container">
+        <h1>DICOM 변환 내역</h1>
+        
+        <div class="history-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>환자 성함</th>
+                        <th>모달리티</th>
+                        <th>상태</th>
+                        <th>상세</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list">
+                    <tr>
+                        <td colspan="5" style="padding: 30px; color: #999;">
+                            데이터를 불러오는 중입니다...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bottom-actions">
+            <a href="upload.html" class="back-btn">← 메인으로 돌아가기</a>
+        </div>
+    </div>
+
+    <script type="module" src="history.js"></script>
+</body>
+</html>

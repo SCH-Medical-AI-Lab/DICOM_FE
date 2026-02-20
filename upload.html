@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+<!---->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>DICOM to PNG Converter</title>
@@ -17,7 +18,7 @@
         <h1>DICOM to PNG Converter</h1>
 
         <div class="upload-box" id="drop-area">
-            <input type="file" id="file-input" accept=".dicom, .dcm, .zip" hidden>
+            <input type="file" id="file-input" accept=".dicom, .zip" hidden>
             
             <div class="icon-area">
                 <svg viewBox="0 0 24 24">
@@ -31,7 +32,7 @@
                 <button id="browse-btn">파일선택</button> 
                 <span>또는 파일을 여기로 드래그 하시오</span>
             </p>
-            <p class="sub-text">.dcm, .dicom, .zip 지원</p>
+            <p class="sub-text">.dicom, .zip지원</p>
             
             <div class="file-info-container" style="margin-top: 10px;">
                 <span id="file-name" class="file-name-display"></span>
@@ -41,7 +42,6 @@
         <div class="button-group">
             <button id="convert-btn" class="convert-btn" disabled>변환</button>
             <button id="history-btn" class="history-btn" onclick="location.href='history.html'">내역 조회</button>
-            <!--<button id="history-btn" class="history-btn" onclick="location.href='history2.html'">내역 조회</button>-->
         </div>
     </div>
 
